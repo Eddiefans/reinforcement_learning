@@ -59,7 +59,7 @@ class TTLTradingEnv(gym.Env):
 
         # Compute TTL return
         if action == 1:
-            ret = np.log(price_end - price_start)
+            ret = np.log(price_end / price_start)
         else:
             ret = 0.0
             self.total_no_ops += 1
