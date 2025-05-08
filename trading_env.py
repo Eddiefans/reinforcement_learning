@@ -14,15 +14,17 @@ class TTLTradingEnv(gym.Env):
     - Tracks stats: wins, losses, average return, volatility.
     """
 
-    def __init__(self, data, window_size=5, initial_capital=1.0,
-                 no_op_penalty=-0.01, max_no_ops=3):
+    def __init__(self, data, ttl = 5, window_size=20, initial_capital=1.0,
+                 no_op_penalty=-0.01, no_op_mod=3):
         super().__init__()
         self.data = np.asarray(data)
         self.window_size = window_size
-        self.ttl = window_size
+        self.ttl = ttl
         self.initial_capital = initial_capital
         self.no_op_penalty = no_op_penalty
-        self.max_no_ops = max_no_ops
+        self.no_op_mod = no_op_mod
+
+        self.total_no_ops = 0
 
         # Actions: 0 = HOLD (do nothing), 1 = BUY
         self.action_space = spaces.Discrete(2)
@@ -42,7 +44,7 @@ class TTLTradingEnv(gym.Env):
         max_start = len(self.data) - self.window_size - self.ttl
         self.current_idx = np.random.randint(self.window_size, max_start)
         self.capital = self.initial_capital
-        self.total_no_ops = 0
+
         self.returns = []  # store each TTL return
 
         # Initial obs: window before decision point
@@ -57,7 +59,7 @@ class TTLTradingEnv(gym.Env):
 
         # Compute TTL return
         if action == 1:
-            ret = (price_end - price_start) / price_start
+            ret = np.log(price_end - price_start)
         else:
             ret = 0.0
             self.total_no_ops += 1
@@ -68,7 +70,7 @@ class TTLTradingEnv(gym.Env):
         self.returns.append(ret)
 
         # Reward is return × capital, then reset capital
-        reward = ret * self.capital
+        reward = ret * self.capital # We need to change the reward policy
         self.capital = self.initial_capital
 
         # Advance time
@@ -99,9 +101,11 @@ class TTLTradingEnv(gym.Env):
         losses = np.sum(arr < 0)
         avg_ret = float(np.mean(arr)) if arr.size else 0.0
         vol = float(np.std(arr)) if arr.size else 0.0
+        total_no_ops = self.total_no_ops
         return {
             "wins": int(wins),
             "losses": int(losses),
             "avg_return": avg_ret,
-            "volatility": vol
+            "volatility": vol,
+            "total no ops": total_no_ops
         }
