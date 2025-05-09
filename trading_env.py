@@ -14,8 +14,8 @@ class TTLTradingEnv(gym.Env):
     - Tracks stats: wins, losses, average return, volatility.
     """
 
-    def __init__(self, data, ttl = 5, window_size=20, initial_capital=1.0,
-                 no_op_penalty=-0.01, no_op_mod=3):
+    def __init__(self, data, ttl = 5, window_size=5, initial_capital=1.0,
+                 no_op_penalty=-0.005, no_op_mod=3):
         super().__init__()
         self.data = np.asarray(data)
         self.window_size = window_size
@@ -45,7 +45,7 @@ class TTLTradingEnv(gym.Env):
         self.current_idx = np.random.randint(self.window_size, max_start)
         self.capital = self.initial_capital
 
-        self.returns = []  # store each TTL return
+        self.returns = []
 
         # Initial obs: window before decision point
         obs = self.data[self.current_idx - self.window_size : self.current_idx]
@@ -62,15 +62,18 @@ class TTLTradingEnv(gym.Env):
             ret = np.log(price_end / price_start)
         else:
             ret = 0.0
+            possible_ret = np.log(price_end / price_start)
             self.total_no_ops += 1
-            if self.total_no_ops > self.max_no_ops:
+            if self.total_no_ops > self.max_no_ops and possible_ret > 0:
                 ret += self.no_op_penalty
+            elif possible_ret < 0:
+                ret += -self.no_op_penalty
 
         # Record return for stats
         self.returns.append(ret)
 
         # Reward is return × capital, then reset capital
-        reward = ret * self.capital # We need to change the reward policy
+        reward = ret
         self.capital = self.initial_capital
 
         # Advance time
