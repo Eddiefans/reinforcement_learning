@@ -135,6 +135,8 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+venv-py312/
+venv-py311/
 
 # Spyder project settings
 .spyderproject
@@ -172,3 +174,36 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+
+# Project specific
+# Keep essential data and models but ignore large raw data
+data/raw/*
+!data/raw/.gitkeep
+# Keep processed data that's needed for running the code
+!data/processed/
+!data/processed/*
+
+# Keep the best model but ignore other models/checkpoints
+!models/
+!models/best_model/
+!models/best_model/*
+
+# Ignore large checkpoint files
+checkpoints/*
+!checkpoints/.gitkeep
+
+# Ignore logs but keep directories
+logs/*
+!logs/.gitkeep
+
+# Keep result directories but ignore large files
+!results/
+!results/*
+!results/*/*
+
+# IDE specific
+.vscode/
+
+# OS specific
+.DS_Store
