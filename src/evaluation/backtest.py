@@ -13,7 +13,6 @@ sys.path.append(project_root)
 from src.environment.trading_env import TTLTradingEnv
 
 # Constants
-N_SHARES = 5  # Number of shares to buy/sell in each trade
 CAPITAL = 1_000_000  # Initial capital
 COMMISSION = 0.00125  # 0.125% commission rate
 
@@ -22,14 +21,15 @@ def run_backtest(
     ticker="AMZN",
     data_path="data/processed/AMZN_features.csv",
     results_dir="results",
-    ttl=5,
+    ttl=10,
     window_size=1,
-    no_op_penalty=-0.005,
+    no_op_penalty=-0.001,
     no_op_mod=3,
-    n_shares=N_SHARES,
     initial_capital=CAPITAL,
     commission=COMMISSION,
     verbose=True,
+    position_size_percent=10, 
+    save=True
 ):
     """
     Run a backtest of the trading strategy.
@@ -136,8 +136,16 @@ def run_backtest(
         
         # Buy action
         if action == 1:
+            
+            # Calculate number of shares to buy
+            max_capital_to_use = capital * position_size_percent / 100
+            shares_to_buy = int(max_capital_to_use / start_price)
+            
+            if shares_to_buy < 1:
+                shares_to_buy = 1  # Ensure at least 1 share
+            
             # Calculate cost with commission
-            cost = n_shares * start_price
+            cost = shares_to_buy * start_price
             commission_fee = cost * commission
             total_cost = cost + commission_fee
             
@@ -152,11 +160,11 @@ def run_backtest(
                 buy_dates.append(start_date)
             
             if verbose:
-                print("Step {}: BUY {} shares at ${:.2f} ({}), Commission: ${:.2f}".format(step, n_shares, start_price, start_date, commission_fee))
+                print("Step {}: BUY {} shares at ${:.2f} ({}), Commission: ${:.2f}".format(step, shares_to_buy, start_price, start_date, commission_fee))
             
             # Since we just bought, we'll sell at the end of this TTL period
             # Calculate proceeds with commission
-            proceeds = n_shares * end_price
+            proceeds = shares_to_buy * end_price
             commission_fee = proceeds * commission
             net_proceeds = proceeds - commission_fee
             
@@ -182,13 +190,13 @@ def run_backtest(
                 'sell_date': end_date,
                 'sell_day': end_day,
                 'sell_price': end_price,
-                'shares': n_shares,
+                'shares': shares_to_buy,
                 'profit_loss': pl,
                 'return_percent': percent_return
             })
             
             if verbose:
-                print("Step {}: SELL {} shares at ${:.2f} ({}), Commission: ${:.2f}".format(step, n_shares, end_price, end_date, commission_fee))
+                print("Step {}: SELL {} shares at ${:.2f} ({}), Commission: ${:.2f}".format(step, shares_to_buy, end_price, end_date, commission_fee))
                 print("     P/L for this instance: ${:.2f} ({:.2f}%)".format(pl, percent_return))
                 print("     Current porfolio value: ${:.2f}".format(capital))
             
@@ -223,51 +231,53 @@ def run_backtest(
     win_rate = winning_trades / num_trades if num_trades > 0 else 0
     
     # Print results
-    print("\n===== Backtest Results =====")
-    print("Initial Capital: ${:,.2f}".format(initial_capital))
-    print("Final Capital: ${:,.2f}".format(final_capital))
-    print("Total Return: {:.2f}%".format(total_return))
-    print("Annualized Return: {:.2f}%".format(annualized_return))
-    print("Total Profit/Loss: ${:,.2f}".format(total_profit))
-    print("Number of Trades: {}".format(num_trades))
-    print("Win Rate: {:.2f}%".format(win_rate * 100))
-    print("============================")
+    if verbose:
+        print("\n===== Backtest Results =====")
+        print("Initial Capital: ${:,.2f}".format(initial_capital))
+        print("Final Capital: ${:,.2f}".format(final_capital))
+        print("Total Return: {:.2f}%".format(total_return))
+        print("Annualized Return: {:.2f}%".format(annualized_return))
+        print("Total Profit/Loss: ${:,.2f}".format(total_profit))
+        print("Number of Trades: {}".format(num_trades))
+        print("Win Rate: {:.2f}%".format(win_rate * 100))
+        print("============================")
     
-    # Plot results
-    plt.figure(figsize=(15, 10))
-    
-    # Plot portfolio value
-    plt.subplot(2, 1, 1)
-    plt.plot(portfolio)
-    plt.title('Portfolio Value Over Time')
-    plt.ylabel('Portfolio Value ($)')
-    plt.grid(True)
-    
-    # Plot price with buy/sell points
-    plt.subplot(2, 1, 2)
-    plt.plot(prices)
-    
-    # Add buy/sell markers
-    plt.scatter(buy_indices, buy_prices, color='green', marker='^', label='Buy')
-    plt.scatter(sell_indices, sell_prices, color='red', marker='v', label='Sell')
-    
-    plt.title('{} Price with Buy/Sell Points'.format(ticker))
-    plt.xlabel('Day')
-    plt.ylabel('Price ($)')
-    plt.legend()
-    plt.grid(True)
-    
-    plt.tight_layout()
+        # Plot results
+        plt.figure(figsize=(15, 10))
+        
+        # Plot portfolio value
+        plt.subplot(2, 1, 1)
+        plt.plot(portfolio)
+        plt.title('Portfolio Value Over Time')
+        plt.ylabel('Portfolio Value ($)')
+        plt.grid(True)
+        
+        # Plot price with buy/sell points
+        plt.subplot(2, 1, 2)
+        plt.plot(prices)
+        
+        # Add buy/sell markers
+        plt.scatter(buy_indices, buy_prices, color='green', marker='^', label='Buy')
+        plt.scatter(sell_indices, sell_prices, color='red', marker='v', label='Sell')
+        
+        plt.title('{} Price with Buy/Sell Points'.format(ticker))
+        plt.xlabel('Day')
+        plt.ylabel('Price ($)')
+        plt.legend()
+        plt.grid(True)
+        
+        plt.tight_layout()
     
     # Save figure
-    figure_path = os.path.join(figures_dir, "backtest_results.png")
-    plt.savefig(figure_path)
-    if verbose:
-        print("Saved figure to {}".format(figure_path))
-        plt.show()
+    if save:
+        figure_path = os.path.join(figures_dir, "backtest_results.png")
+        plt.savefig(figure_path)
+        if verbose:
+            print("Saved figure to {}".format(figure_path))
+            plt.show()
     
     # Save trade history
-    if trade_history:
+    if trade_history and save:
         trade_df = pd.DataFrame(trade_history)
         trade_history_path = os.path.join(trade_history_dir, "trade_history.csv")
         trade_df.to_csv(trade_history_path, index=False)
@@ -287,3 +297,14 @@ def run_backtest(
 
 if __name__ == "__main__":
     results = run_backtest(model_path="models/best_model/best_model")
+    
+    ITERATIONS = 100
+    results = 0
+    for i in range(ITERATIONS):
+        result = run_backtest(model_path="models/best_model/best_model", verbose=False, save = False)
+        results += result['final_capital']
+    results /= ITERATIONS
+    print("Average final capital over {} runs: ${:,.2f}".format(ITERATIONS, results))    
+    
+    
+    

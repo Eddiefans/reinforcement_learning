@@ -20,9 +20,9 @@ def train_model(
     best_model_dir="models/best_model",
     eval_log_dir="logs/evaluation",
     total_timesteps=50_000_000,
-    ttl=5,
+    ttl=10,
     window_size=1,
-    no_op_penalty=-0.005,
+    no_op_penalty=-0.001,
     no_op_mod=3, 
     verbose=True
 ):
