@@ -1,6 +1,6 @@
 # Deep Reinforcement Learning for Algorithmic Trading
 
-![Trading Results](assets/backtest_results.png)
+![Trading Results](results/figures/backtest_results.png)
 
 A robust framework for applying deep reinforcement learning techniques to algorithmic trading. This project implements various reinforcement learning algorithms to optimize trading strategies in financial markets.
 
@@ -10,7 +10,6 @@ A robust framework for applying deep reinforcement learning techniques to algori
 - Initial Capital: $1,000,000.00
 - Final Capital: $1,419,916.47
 - Total Return: 41.99%
-- Annualized Return: 1.76%
 - Total Profit/Loss: $419,916.47
 - Number of Trades: 449
 - Win Rate: 55.90%
