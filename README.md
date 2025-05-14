@@ -1,7 +1,5 @@
 # Deep Reinforcement Learning for Algorithmic Trading
 
-![Trading Results](results/figures/backtest_results.png)
-
 A robust framework for applying deep reinforcement learning techniques to algorithmic trading. This project implements various reinforcement learning algorithms to optimize trading strategies in financial markets.
 
 ## Performance Highlights
@@ -13,6 +11,8 @@ A robust framework for applying deep reinforcement learning techniques to algori
 - Total Profit/Loss: $419,916.47
 - Number of Trades: 449
 - Win Rate: 55.90%
+
+![Trading Results](results/figures/backtest_results.png)
 
 ## Overview
 
